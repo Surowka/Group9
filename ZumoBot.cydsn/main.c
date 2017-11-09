@@ -247,6 +247,14 @@ int main()
     motor_turn(200,50,2000);     // turn
     motor_turn(50,200,2000);     // turn
     motor_backward(100,2000);    // movinb backward
+
+    motor_turn(202,192,2600);     // USING TURN TO MOVE FORWARD
+    motor_turn(196,50,600);     // 90 degree right turn
+    motor_turn(202,192,2000);     // USING TURN TO MOVE FORWARD
+    motor_turn(196,50,600);     // 90 degree right turn
+    motor_turn(202,192,2600);     // USING TURN TO MOVE FORWARD
+    motor_turn(231,30,700);     // bigger right turn
+    motor_turn(140,164,3100);     // slow curve left
        
     motor_stop();               // motor stop
     

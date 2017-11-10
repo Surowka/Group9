@@ -219,8 +219,11 @@ int main()
     UART_1_Start();
   
     sensor_isr_StartEx(sensor_isr_handler);
+    CyDelay(2000);
     
     reflectance_start();
+    motor_start;
+    
 
     IR_led_Write(1);
     for(;;)
@@ -230,10 +233,42 @@ int main()
         reflectance_digital(&dig);      //print out 0 or 1 according to results of reflectance period
         printf("%d %d %d %d \r\n", dig.l3, dig.l1, dig.r1, dig.r3);        //print out 0 or 1 according to results of reflectance period
         
-        CyDelay(500);
+        // @brief avoiding black line
+        // @detail testing behaviour; how to avoid black line
+        if (dig.l1 == 0 || dig.r1 == 0 || dig.l3==0 || dig.r3==0){
+            motor_backward(100,500);
+           motor_turn(150,15,100);
+        } else motor_forward(100,500);
+        
+        
+        // @brief follow black line
+        // @detail testing behaviour; how to follow black line
+        if (dig.l3 ==1 && dig.l1 == 0 && dig.r1 == 0 && dig.r3 == 1){
+            motor_forward(50,250);   
+        } else
+        if (dig.l3 ==1 && dig.l1 == 1 && dig.r1 == 0 && dig.r3 == 1) {
+            motor_turn(70,8,250);   
+        } else
+        if (dig.l3 ==1 && dig.l1 == 0 && dig.r1 == 1 && dig.r3 == 1) {
+            motor_turn(8,70,250);   
+        } else
+        
+        // @brief failsafe
+        // @detail incase the robot moves out of the track completely
+        if (dig.l3 == 1 && dig.l1 == 1 && dig.r1 == 1 && dig.r3 == 1 && count == 1) {
+            motor_stop();   
+        }
+        if (dig.l3 == 1 && dig.l1 == 1 && dig.r1 == 1 && dig.r3 == 1) {
+            count++; 
+        }
+        if (dig.l3 == 0 && dig.l1 == 0 && dig.r1 == 0 && dig.r3 == 0) {
+            motor_stop();   
+        }
+        
+        CyDelay(250);
     }
 }   
-//*/
+*/
 
  /* //motor//
 int main()

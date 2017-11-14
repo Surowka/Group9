@@ -52,6 +52,7 @@ int rread(void);
 
 
 //battery level//
+/*
 int main()
 {
     CyGlobalIntEnable; 
@@ -82,7 +83,7 @@ int main()
         
     }
  }   
-//*/
+*/
 
 
 /*//ultra sonic sensor//
@@ -210,20 +211,32 @@ int main()
 //*/
 
 
-/*//reflectance//
+//reflectance//
 int main()
 {
     struct sensors_ ref;
     struct sensors_ dig;
     CyGlobalIntEnable; 
     UART_1_Start();
+    
   
     sensor_isr_StartEx(sensor_isr_handler);
     CyDelay(2000);
-    
+    motor_start();    
     reflectance_start();
-    motor_start;
     
+    //uint8 const Base_value = 100;
+    uint8 const Initial_value = 10;
+    uint8 Maxx = 4;
+    uint8 accel = Initial_value;
+    uint8 speed =0;
+    uint8 multiplier = Maxx;
+    int const Sensor_max = 23999;
+    int sen;
+    int flag = 0;
+    int state = 10; // 0 = stop, 1 = forward, 2 = right, 3 = left
+    int temp = 0;
+    // state = what we are doing; Temp = what we need to do;
 
     IR_led_Write(1);
     for(;;)
@@ -232,7 +245,7 @@ int main()
         printf("%d %d %d %d \r\n", ref.l3, ref.l1, ref.r1, ref.r3);       //print out each period of reflectance sensors
         reflectance_digital(&dig);      //print out 0 or 1 according to results of reflectance period
         printf("%d %d %d %d \r\n", dig.l3, dig.l1, dig.r1, dig.r3);        //print out 0 or 1 according to results of reflectance period
-        
+/*       
         // @brief avoiding black line
         // @detail testing behaviour; how to avoid black line
         if (dig.l1 == 0 || dig.r1 == 0 || dig.l3==0 || dig.r3==0){
@@ -243,32 +256,80 @@ int main()
         
         // @brief follow black line
         // @detail testing behaviour; how to follow black line
-        if (dig.l3 ==1 && dig.l1 == 0 && dig.r1 == 0 && dig.r3 == 1){
-            motor_forward(50,250);   
+        // @detail the following code can run on 14/11/17 track
+        if (dig.l3 == 0 && dig.l1 == 0 && dig.r1 == 0 && dig.r3 == 0) {
+            motor_stop();   
         } else
-        if (dig.l3 ==1 && dig.l1 == 1 && dig.r1 == 0 && dig.r3 == 1) {
-            motor_turn(70,8,250);   
+        if (dig.l1 == 0 && dig.r1 == 0){
+            motor_forward(150,25);   
         } else
-        if (dig.l3 ==1 && dig.l1 == 0 && dig.r1 == 1 && dig.r3 == 1) {
-            motor_turn(8,70,250);   
+        if (dig.l1 == 1 && dig.r1 == 0) {
+            //turn_right(150,150,25);
+            motor_turn(250,10,25);
         } else
+        if (dig.l3 == 1 && dig.l1 == 0 && dig.r1 == 1 && dig.r3 == 1) {  
+            //turn_left(150,150,25);
+            motor_turn(10,250,25);
+        }
+        
         
         // @brief failsafe
         // @detail incase the robot moves out of the track completely
-        if (dig.l3 == 1 && dig.l1 == 1 && dig.r1 == 1 && dig.r3 == 1 && count == 1) {
-            motor_stop();   
-        }
-        if (dig.l3 == 1 && dig.l1 == 1 && dig.r1 == 1 && dig.r3 == 1) {
-            count++; 
-        }
+        //if (dig.l3 == 1 && dig.l1 == 1 && dig.r1 == 1 && dig.r3 == 1)
+*/
+        // @brief new track, 14/11/2017
+        // @detail accelaration immplementation.
         if (dig.l3 == 0 && dig.l1 == 0 && dig.r1 == 0 && dig.r3 == 0) {
-            motor_stop();   
+            temp = 0;  
+        } else
+        if (ref.l1 >= 20000 && ref.r1 >= 20000){    //checking what do we have to do
+            temp = 1;  
+        } else
+        if (ref.l1 < 20000 && ref.r1 >= 20000){
+            temp = 2;
+        } else
+        if (ref.l1 >= 20000 && ref.r1 < 20000) {  
+            temp = 3;
         }
         
-        CyDelay(250);
+        if (state != temp) {        // if what we have to do  != what we are doing, reset
+            if (state == 0) flag++;
+            accel = Initial_value; 
+            multiplier = 0;
+            state = temp;
+        }
+        
+        if (state == 0 && (flag == 3 || flag == 1)) {           // how to do things
+            motor_stop();
+        } else 
+        if (state == 1) {
+            if (multiplier < Maxx) multiplier++;
+            speed = Sensor_max/200;
+            speed = speed + accel * multiplier;
+            motor_forward(speed,25);
+        } else
+        if (state == 2) {
+            sen = Sensor_max - ref.l1 - 1000;
+            sen /= 180;
+            if (multiplier < Maxx) multiplier++;
+            speed = Sensor_max / 200;
+            motor_turn(speed + sen,speed-sen,25);
+        } else
+        if (state == 3) {
+            sen = (Sensor_max - ref.r1) / 180;
+            if (multiplier < Maxx) multiplier++;
+            speed = Sensor_max / 200;
+            motor_turn(speed - sen,speed + sen,25);
+        } else 
+        {
+            speed = Sensor_max/200;
+            motor_forward(speed,25);
+        }
+        CyDelay(25);
+
     }
 }   
-*/
+
 
  /* //motor//
 int main()

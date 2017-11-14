@@ -233,6 +233,7 @@ int main()
     uint8 multiplier = Maxx;
     int const Sensor_max = 23999;
     int sen;
+    int IR_val = 0;
     int flag = 0;
     int state = 10; // 0 = stop, 1 = forward, 2 = right, 3 = left
     int temp = 0;
@@ -299,9 +300,18 @@ int main()
             state = temp;
         }
         
-        if (state == 0 && (flag == 3 || flag == 1)) {           // how to do things
+        if (state == 0 && (flag == 1)) {           // how to do things
             motor_stop();
-        } else 
+            do {
+                IR_val = get_IR();
+            } while (!IR_val);
+            motor_start();
+            motor_forward(240,25);
+        } else
+        if (state == 0 && (flag == 3)) {
+            motor_stop();
+        }
+        
         if (state == 1) {
             if (multiplier < Maxx) multiplier++;
             speed = Sensor_max/200;
@@ -311,22 +321,15 @@ int main()
         if (state == 2) {
             sen = Sensor_max - ref.l1 - 1000;
             sen /= 180;
-            if (multiplier < Maxx) multiplier++;
             speed = Sensor_max / 200;
             motor_turn(speed + sen,speed-sen,25);
         } else
         if (state == 3) {
             sen = (Sensor_max - ref.r1) / 180;
-            if (multiplier < Maxx) multiplier++;
             speed = Sensor_max / 200;
             motor_turn(speed - sen,speed + sen,25);
-        } else 
-        {
-            speed = Sensor_max/200;
-            motor_forward(speed,25);
         }
         CyDelay(25);
-
     }
 }   
 

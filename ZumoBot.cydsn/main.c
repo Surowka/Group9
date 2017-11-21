@@ -52,6 +52,7 @@ int rread(void);
 
 
 //battery level//
+/*
 int main()
 {
     CyGlobalIntEnable; 
@@ -82,7 +83,7 @@ int main()
         
     }
  }   
-//*/
+*/
 
 
 /*//ultra sonic sensor//
@@ -209,97 +210,71 @@ int main()
 }   
 //*/
 
-
-/*//reflectance//
+//reflectance//
 int main()
 {
     struct sensors_ ref;
     struct sensors_ dig;
     CyGlobalIntEnable; 
     UART_1_Start();
+    
   
     sensor_isr_StartEx(sensor_isr_handler);
     CyDelay(2000);
-    
+    motor_start();    
     reflectance_start();
-    motor_start;
     
+    
+    int const Sensor_max = 23999, time = 500, left_max = Sensor_max - 4000, right_max = Sensor_max - 5000;
+    float speedl, speedr, error_left, error_right, max_speed = 210, last_e_l=0, last_e_r=0;
+    float const kp = 345, bias = 40, kd = 560;
+    // kp = 290, bias = 40, kd = 50, time = 500;
+    int IR_val = 0;
+    int flag = 0;
+    int state = 10; // 0 = stop, 1 = forward, 2 = right, 3 = left
+    int temp = 0;
+    // state = what we are doing; Temp = what we need to do;
 
     IR_led_Write(1);
     for(;;)
     {
         reflectance_read(&ref);
-        printf("%d %d %d %d \r\n", ref.l3, ref.l1, ref.r1, ref.r3);       //print out each period of reflectance sensors
+        //printf("%d %d %d %d \r\n", ref.l3, ref.l1, ref.r1, ref.r3);       //print out each period of reflectance sensors
         reflectance_digital(&dig);      //print out 0 or 1 according to results of reflectance period
-        printf("%d %d %d %d \r\n", dig.l3, dig.l1, dig.r1, dig.r3);        //print out 0 or 1 according to results of reflectance period
+        //printf("%d %d %d %d \r\n", dig.l2, dig.l1, dig.r1, dig.r2);        //print out 0 or 1 according to results of reflectance period
         
-        // @brief avoiding black line
-        // @detail testing behaviour; how to avoid black line
-        if (dig.l1 == 0 || dig.r1 == 0 || dig.l3==0 || dig.r3==0){
-            motor_backward(100,500);
-           motor_turn(150,15,100);
-        } else motor_forward(100,500);
-        
-        
-        // @brief follow black line
-        // @detail testing behaviour; how to follow black line
-        if (dig.l3 ==1 && dig.l1 == 0 && dig.r1 == 0 && dig.r3 == 1){
-            motor_forward(50,250);   
-        } else
-        if (dig.l3 ==1 && dig.l1 == 1 && dig.r1 == 0 && dig.r3 == 1) {
-            motor_turn(70,8,250);   
-        } else
-        if (dig.l3 ==1 && dig.l1 == 0 && dig.r1 == 1 && dig.r3 == 1) {
-            motor_turn(8,70,250);   
-        } else
-        
-        // @brief failsafe
-        // @detail incase the robot moves out of the track completely
-        if (dig.l3 == 1 && dig.l1 == 1 && dig.r1 == 1 && dig.r3 == 1 && count == 1) {
-            motor_stop();   
-        }
-        if (dig.l3 == 1 && dig.l1 == 1 && dig.r1 == 1 && dig.r3 == 1) {
-            count++; 
-        }
         if (dig.l3 == 0 && dig.l1 == 0 && dig.r1 == 0 && dig.r3 == 0) {
-            motor_stop();   
+            temp = 0;  
+        } else temp = 4;
+        
+        if (state != temp) {        // if what we have to do  != what we are doing, reset
+            if (state == 0) flag++;
+            state = temp;
         }
         
-        CyDelay(250);
+        if (state == 0 && (flag == 1)) {           // Stopping at black lines
+            motor_stop();
+            do {
+                IR_val = get_IR();
+            } while (!IR_val);
+            motor_start();
+            motor_forward_us(255,time*10); //modified library into 
+        } else
+        if (state == 0 && (flag == 3)) {
+            motor_stop();
+        } else {
+            error_left = (Sensor_max - ref.l1);
+            error_right = (Sensor_max - ref.r1);
+            speedl = max_speed - ((error_left/left_max)*kp + ((error_left - last_e_l) / time) * kd)+ bias;
+            speedr = max_speed - ((error_right/right_max)*kp + ((error_right - last_e_r) / time) * kd) + bias;
+            motor_turn_float(speedr,speedl,time);
+            last_e_l = error_left;
+            last_e_r = error_right;
+            //printf("%f %f %f %f\n",error_left/left_max,error_right/right_max,speedl,speedr);
+        }
+        CyDelayUs(time);
     }
 }   
-*/
-
- /* //motor//
-int main()
-{
-    CyGlobalIntEnable; 
-    UART_1_Start();
-
-    motor_start();              // motor start
-
-    motor_forward(100,2000);     // moving forward
-    motor_turn(200,50,2000);     // turn
-    motor_turn(50,200,2000);     // turn
-    motor_backward(100,2000);    // movinb backward
-
-    motor_turn(202,192,2600);     // USING TURN TO MOVE FORWARD
-    motor_turn(196,50,600);     // 90 degree right turn
-    motor_turn(202,192,2000);     // USING TURN TO MOVE FORWARD
-    motor_turn(196,50,600);     // 90 degree right turn
-    motor_turn(202,192,2600);     // USING TURN TO MOVE FORWARD
-    motor_turn(231,30,700);     // bigger right turn
-    motor_turn(140,164,3100);     // slow curve left
-       
-    motor_stop();               // motor stop
-    
-    for(;;)
-    {
-
-    }
-}
-//*/
-    
 
 /*//gyroscope//
 int main()

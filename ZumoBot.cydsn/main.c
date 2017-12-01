@@ -92,26 +92,22 @@ int main()
     motor_start();    
     reflectance_start();
     
-    
     int const Sensor_max = 23999, time = 1, left_max = Sensor_max - 4000, right_max = Sensor_max - 5000;
-    int speedl, speedr, error_left, error_right, max_speed = 200, last_e_l=0, last_e_r=0;
-    int const kp = 278, bias = 55, kd = 0;
-    // kp = 290, bias = 40, kd = 50, time = 500;
-    // kp = 345, bias = 40, kd = 560, speed 210;
+    int speedl, speedr, error_left, error_right, max_speed = 200;
+    int const kp = 295, bias = 55;
     int IR_val = 0;
     int flag = 0;
     int state = 0; 
     int temp = 4;
+    int inside = 0; //0 = not in the ring, else = in the ring;
     // state = what we are doing; Temp = what we need to do;
-
     IR_led_Write(1);
     for(;;)
     {
+        // battery level warning#########################################
         reflectance_read(&ref);
-        //printf("%d %d %d %d \r\n", ref.l3, ref.l1, ref.r1, ref.r3);       //print out each period of reflectance sensors
-        reflectance_digital(&dig);      //print out 0 or 1 according to results of reflectance period
-        //printf("%d %d %d %d \r\n", dig.l2, dig.l1, dig.r1, dig.r2);        //print out 0 or 1 according to results of reflectance period
-        
+        reflectance_digital(&dig);
+        // actual moving#########################################     
         if (dig.l3 == 0 && dig.l1 == 0 && dig.r1 == 0 && dig.r3 == 0) {
             temp = 0;  
         } else temp = 4;
@@ -127,38 +123,70 @@ int main()
                 IR_val = get_IR();
             } while (!IR_val);
             motor_start();
-            motor_forward(255,100);
-        } else
+            motor_forward(255,400);   // @ crossout in sumo,include in line
+            // cut here 
+        } else 
+        // @ line follower
         if (state == 0 && (flag == 3)) {
             motor_stop();
-        } else { //moving
+        } else {
             error_left = (Sensor_max - ref.l1);
             error_right = (Sensor_max - ref.r1);
             speedl = max_speed 
                     - (kp* error_left)/left_max 
-                    + kd* (error_left - last_e_l) / time
                     + bias;
             speedr = max_speed 
                     - (kp* error_right)/right_max 
-                    + kd* (error_right - last_e_r) / time
                     + bias;
             if (speedr > 255) speedr = 255;
             if (speedl > 255) speedl = 255;
             
-            if (speedl < 0) turn_left(60,speedl,time); 
+            if (speedl < 3) turn_left(65,speedl,time); 
             else
-            if (speedr < 0) turn_right(speedr,60,time);
+            if (speedr < 3) turn_right(speedr,65,time);
             else
             motor_turn(speedr,speedl,time);
-            last_e_l = error_left;
-            last_e_r = error_right;
-            //printf("%d %d %d %d\n",error_left/left_max,error_right/right_max,speedl,speedr);
-        }
+        }    
+            
         CyDelay(time);
     }
 }   
+// @ sumo
+/*
+    inside = 1;
+        } else 
+        if (!inside) {
+            error_left = (Sensor_max - ref.l1);
+            error_right = (Sensor_max - ref.r1);
+            speedl = max_speed 
+                    - (kp* error_left)/left_max 
+                    + bias;
+            speedr = max_speed 
+                    - (kp* error_right)/right_max 
+                    + bias;
+            if (speedr > 255) speedr = 255;
+            if (speedl > 255) speedl = 255;
+            
+            if (speedl < 3) turn_left(65,speedl,time); else
+            if (speedr < 3) turn_right(speedr,65,time); else
+            motor_turn(speedr,speedl,time);
+        } else
+        if ((dig.r3 == 0 || dig.r1 == 0 || dig.l1==0 || dig.l3==0) && inside) {
+            motor_backward(200,250*time);
+            turn_right(50,255,250*time);
+        } else 
+        if (dig.r1==1 && dig.l1==1 && inside){
+            turn_right(255,255,500*time);
+            motor_forward(255,250*time);
+        } 
+        
+*/
 
-
+// @line follower
+/*
+            
+*/
+    
 /* Don't remove the functions below */
 int _write(int file, char *ptr, int len)
 {

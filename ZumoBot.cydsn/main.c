@@ -92,22 +92,23 @@ int main()
     motor_start();    
     reflectance_start();
     
+    
     int const Sensor_max = 23999, time = 1, left_max = Sensor_max - 4000, right_max = Sensor_max - 5000;
-    int speedl, speedr, error_left, error_right, max_speed = 200;
-    int const kp = 295, bias = 55;
+    int speedl, speedr, error_left, error_right, max_speed = 255;
+    int const kp = 295, bias = 0;
+    // kp = 290, bias = 40, kd = 50, time = 500;
+    // kp = 345, bias = 40, kd = 560, speed 210;
     int IR_val = 0;
     int flag = 0;
     int state = 0; 
     int temp = 4;
-    int inside = 0; //0 = not in the ring, else = in the ring;
     // state = what we are doing; Temp = what we need to do;
+
     IR_led_Write(1);
     for(;;)
     {
-        // battery level warning#########################################
         reflectance_read(&ref);
-        reflectance_digital(&dig);
-        // actual moving#########################################     
+        reflectance_digital(&dig); 
         if (dig.l3 == 0 && dig.l1 == 0 && dig.r1 == 0 && dig.r3 == 0) {
             temp = 0;  
         } else temp = 4;
@@ -123,70 +124,44 @@ int main()
                 IR_val = get_IR();
             } while (!IR_val);
             motor_start();
-            motor_forward(255,400);   // @ crossout in sumo,include in line
-            // cut here 
-        } else 
-        // @ line follower
+            motor_forward(255,200);
+        } else
         if (state == 0 && (flag == 3)) {
             motor_stop();
-        } else {
+        } else { 
             error_left = (Sensor_max - ref.l1);
             error_right = (Sensor_max - ref.r1);
-            speedl = max_speed 
-                    - (kp* error_left)/left_max 
-                    + bias;
             speedr = max_speed 
-                    - (kp* error_right)/right_max 
+                    - (kp* error_left)/left_max
+                    + bias;
+            speedl = max_speed 
+                    - (kp* error_right)/right_max
                     + bias;
             if (speedr > 255) speedr = 255;
             if (speedl > 255) speedl = 255;
-            
-            if (speedl < 3) turn_left(65,speedl,time); 
+            if (speedr < 0 && speedr < speedl) turn_right(speedr,65,time);
             else
-            if (speedr < 3) turn_right(speedr,65,time);
+            if (speedl < 0 && speedl < speedr) turn_left(65,speedl,time); 
             else
-            motor_turn(speedr,speedl,time);
-        }    
-            
+            motor_turn(speedl,speedr,time);
+        }
         CyDelay(time);
     }
 }   
-// @ sumo
 /*
-    inside = 1;
+        // this is the sumo shiet
+        if (dig.r3 == 0 || dig.r1 == 0 || dig.l1==0 || dig.l3==0) {
+            motor_backward(200,5*time);
+            turn_right(50,255,5*time);
         } else 
-        if (!inside) {
-            error_left = (Sensor_max - ref.l1);
-            error_right = (Sensor_max - ref.r1);
-            speedl = max_speed 
-                    - (kp* error_left)/left_max 
-                    + bias;
-            speedr = max_speed 
-                    - (kp* error_right)/right_max 
-                    + bias;
-            if (speedr > 255) speedr = 255;
-            if (speedl > 255) speedl = 255;
-            
-            if (speedl < 3) turn_left(65,speedl,time); else
-            if (speedr < 3) turn_right(speedr,65,time); else
-            motor_turn(speedr,speedl,time);
-        } else
-        if ((dig.r3 == 0 || dig.r1 == 0 || dig.l1==0 || dig.l3==0) && inside) {
-            motor_backward(200,250*time);
-            turn_right(50,255,250*time);
-        } else 
-        if (dig.r1==1 && dig.l1==1 && inside){
-            turn_right(255,255,500*time);
-            motor_forward(255,250*time);
-        } 
-        
-*/
+        if (dig.r1==1 && dig.l1==1){
+            // @ randomness is the key
+            //motor_turn(rand() % 205 + 50,rand() % 205 + 50,time); 
+            turn_right(255,255,10*time);
+            motor_turn(255,100,5*time);
+        } else*/
+        // this is the moving
 
-// @line follower
-/*
-            
-*/
-    
 /* Don't remove the functions below */
 int _write(int file, char *ptr, int len)
 {

@@ -94,8 +94,8 @@ int main()
     
     
     int const Sensor_max = 23999, time = 1, left_max = Sensor_max - 4000, right_max = Sensor_max - 5000;
-    int speedl, speedr, error_left, error_right, max_speed = 255;
-    int const kp = 295, bias = 0;
+    int speedl, speedr, error_left, error_right, max_speed = 230;
+    int const kp = max_speed+40, bias = 0;
     // kp = 290, bias = 40, kd = 50, time = 500;
     // kp = 345, bias = 40, kd = 560, speed 210;
     int IR_val = 0;
@@ -137,11 +137,11 @@ int main()
             speedl = max_speed 
                     - (kp* error_right)/right_max
                     + bias;
-            if (speedr > 255) speedr = 255;
-            if (speedl > 255) speedl = 255;
-            if (speedr < 0 && speedr < speedl) turn_right(speedr,65,time);
+            if (speedr > max_speed) speedr = max_speed;
+            if (speedl > max_speed) speedl = max_speed;
+            if (speedl < 0 && speedl < speedr) turn_left(max_speed,max_speed,time);
             else
-            if (speedl < 0 && speedl < speedr) turn_left(65,speedl,time); 
+            if (speedr < 0 && speedr < speedl) turn_right(max_speed,max_speed,time); 
             else
             motor_turn(speedl,speedr,time);
         }

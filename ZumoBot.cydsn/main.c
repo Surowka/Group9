@@ -92,75 +92,103 @@ int main()
     motor_start();    
     reflectance_start();
     
-    
     int const Sensor_max = 23999, time = 1, left_max = Sensor_max - 4000, right_max = Sensor_max - 5000;
-    int speedl, speedr, error_left, error_right, max_speed = 230;
-    int const kp = max_speed+40, bias = 0;
-    // kp = 290, bias = 40, kd = 50, time = 500;
-    // kp = 345, bias = 40, kd = 560, speed 210;
+    int speedl, speedr, error_left, error_right, max_speed =255, last_er=0, last_el=0;
+    int const kp = max_speed + 205,kd = kp/10;
     int IR_val = 0;
     int flag = 0;
     int state = 0; 
     int temp = 4;
+    int inside = 0; //0 = not in the ring, else = in the ring;
     // state = what we are doing; Temp = what we need to do;
-
     IR_led_Write(1);
     for(;;)
     {
         reflectance_read(&ref);
-        reflectance_digital(&dig); 
+        reflectance_digital(&dig);
         if (dig.l3 == 0 && dig.l1 == 0 && dig.r1 == 0 && dig.r3 == 0) {
             temp = 0;  
         } else temp = 4;
-        
-        if (state != temp) {        // if what we have to do  != what we are doing, reset
+        // if what we have to do  != what we are doing, reset
+        if (state != temp) {        
             if (state == 0) flag++;
             state = temp;
         }
-        
-        if (state == 0 && (flag == 1)) {           // Stopping at black lines
+        // Stopping at black lines
+        if (state == 0 && (flag == 1)) {           
             motor_stop();
             do {
                 IR_val = get_IR();
             } while (!IR_val);
             motor_start();
-            motor_forward(255,200);
-        } else
-        if (state == 0 && (flag == 3)) {
-            motor_stop();
-        } else { 
+// cut here to change from line to sumo and vice versa --------------------------
+            motor_forward(255,400);
+            inside = 1;
+        } else 
+        if (!inside) {
             error_left = (Sensor_max - ref.l1);
             error_right = (Sensor_max - ref.r1);
             speedr = max_speed 
-                    - (kp* error_left)/left_max
-                    + bias;
+                     - (kp* error_left)/left_max 
+                     + kd*(error_left - last_el)/left_max;
             speedl = max_speed 
-                    - (kp* error_right)/right_max
-                    + bias;
-            if (speedr > max_speed) speedr = max_speed;
-            if (speedl > max_speed) speedl = max_speed;
-            if (speedl < 0 && speedl < speedr) turn_left(max_speed,max_speed,time);
+                     - (kp* error_right)/right_max 
+                     + kd*(error_right - last_er)/right_max;
+            if (speedl > 255) speedl = 255;
+            if (speedr > 255) speedr = 255;
+            if (speedl < 0) turn_left(speedr,-speedl,time);
             else
-            if (speedr < 0 && speedr < speedl) turn_right(max_speed,max_speed,time); 
+            if (speedr < 0) turn_right(-speedr,speedl,time); 
             else
             motor_turn(speedl,speedr,time);
-        }
+            last_er = error_right;
+            last_el = error_left;
+        } else
+        if ((dig.r3 == 0 || dig.r1 == 0 || dig.l1==0 || dig.l3==0) && inside) {
+            motor_backward(200,250*time);
+            turn_right(50,255,250*time);
+        } else 
+        if (dig.r1==1 && dig.l1==1 && inside){
+            turn_right(max_speed,max_speed,500*time);
+            motor_forward(max_speed,250*time);
+        } 
+// cut till here to change mode ---------------------------------------------
         CyDelay(time);
     }
 }   
+// @ sumo
 /*
-        // this is the sumo shiet
-        if (dig.r3 == 0 || dig.r1 == 0 || dig.l1==0 || dig.l3==0) {
-            motor_backward(200,5*time);
-            turn_right(50,255,5*time);
-        } else 
-        if (dig.r1==1 && dig.l1==1){
-            // @ randomness is the key
-            //motor_turn(rand() % 205 + 50,rand() % 205 + 50,time); 
-            turn_right(255,255,10*time);
-            motor_turn(255,100,5*time);
-        } else*/
-        // this is the moving
+    
+        
+*/
+
+// @line follower
+/*
+motor_forward(max_speed,200)
+} else 
+        // @ line follower
+        if (state == 0 && (flag == 3)) {
+            motor_stop();
+        } else {
+            error_left = (Sensor_max - ref.l1);
+            error_right = (Sensor_max - ref.r1);
+            speedr = max_speed 
+                     - (kp* error_left)/left_max 
+                     + kd*(error_left - last_el)/left_max;
+            speedl = max_speed 
+                     - (kp* error_right)/right_max 
+                     + kd*(error_right - last_er)/right_max;
+            if (speedl > 255) speedl = 255;
+            if (speedr > 255) speedr = 255;
+            if (speedl < 0) turn_left(speedr,-speedl,time);
+            else
+            if (speedr < 0) turn_right(-speedr,speedl,time); 
+            else
+            motor_turn(speedl,speedr,time);
+            last_er = error_right;
+            last_el = error_left;
+        }               
+*/
 
 /* Don't remove the functions below */
 int _write(int file, char *ptr, int len)

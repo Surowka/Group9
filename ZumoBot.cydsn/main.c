@@ -142,7 +142,6 @@ int main()
             else
             if (speedr < 0) turn_right(-speedr,speedl,time); 
             else
-            
             motor_turn(speedl,speedr,time);
             last_er = error_right;
             last_el = error_left;

@@ -41,22 +41,23 @@ void motor_forward(uint8 speed,uint32 delay)
     CyDelay(delay); 
 }
 
-void turn_right(uint8 speedr, uint8 speedl, uint32 delay)
+void move (int speedr, int speedl, uint32 delay)
 {
-    MotorDirLeft_Write(0);      // set LeftMotor forward mode
-    MotorDirRight_Write(1);     // set RightMotor forward mode
+    if (speedr >= 0 && speedl >=0) {
+        MotorDirLeft_Write(0);      
+        MotorDirRight_Write(0);
+    } else
+    if (speedr < 0 && speedl >=0) {
+        MotorDirLeft_Write(0);     
+        MotorDirRight_Write(1); 
+    } else
+    if (speedr >=0 && speedl <0) {
+        MotorDirLeft_Write(1);      
+        MotorDirRight_Write(0);    
+    }
     PWM_WriteCompare1(speedl); 
     PWM_WriteCompare2(speedr); 
-    CyDelay(delay); 
-}
-
-void turn_left(uint8 speedr, uint8 speedl, uint32 delay)
-{
-    MotorDirLeft_Write(1);      // set LeftMotor forward mode
-    MotorDirRight_Write(0);     // set RightMotor forward mode
-    PWM_WriteCompare1(speedl); 
-    PWM_WriteCompare2(speedr); 
-    CyDelay(delay); 
+    CyDelay(delay);
 }
 /**
 * @brief    Moving motors to make a turn 

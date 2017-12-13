@@ -94,7 +94,7 @@ int main()
     
     int const Sensor_max = 23999, time = 1, left_max = Sensor_max - 5000, right_max = Sensor_max - 5000;
     int speedl, speedr, error_left, error_right, max_speed = 255, last_er=0, last_el=0;
-    int const kp = max_speed + 75 ,kd = kp/5;
+    int const kp = max_speed + 85 ,kd = kp/5;
     int IR_val = 0;
     int flag = 0;
     int state = 0; 

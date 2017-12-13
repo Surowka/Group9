@@ -92,7 +92,7 @@ int main()
     motor_start();    
     reflectance_start();
     
-    int const Sensor_max = 23999, time = 1, left_max = Sensor_max - 5000, right_max = Sensor_max - 5000;
+    int const Sensor_max = 23999, time = 1, left_max = Sensor_max - 4100, right_max = Sensor_max - 5200;
     int speedl, speedr, error_left, error_right, max_speed = 255, last_er=0, last_el=0;
     int const kp = max_speed + 45,kd = kp/10;
     int IR_val = 0;
@@ -122,7 +122,47 @@ int main()
             } while (!IR_val);
             motor_start();
 // cut here to change from line to sumo and vice versa --------------------------
-            motor_forward(max_speed,200);
+        motor_forward(max_speed,400);
+            inside = 1;
+        } else 
+        if (!inside) {
+            error_left = (Sensor_max - ref.l1);
+            error_right = (Sensor_max - ref.r1);
+            speedr = max_speed 
+                     - (kp* error_left)/left_max 
+                     + kd*(error_left - last_el)/left_max;
+            speedl = max_speed 
+                     - (kp* error_right)/right_max 
+                     + kd*(error_right - last_er)/right_max;
+            if (speedl > max_speed) speedl = max_speed;
+            if (speedr > max_speed) speedr = max_speed;
+            if (speedl < -max_speed) speedl = -max_speed;
+            if (speedr < -max_speed) speedr = -max_speed; 
+            move(speedr,speedl,time);
+            last_er = error_right;
+            last_el = error_left;
+        } else
+        if ((dig.r3 == 0 || dig.r1 == 0 || dig.l1==0 || dig.l3==0) && inside) {
+            motor_backward(200,250*time);
+            turn_right(50,255,250*time);
+        } else 
+        if (dig.r1==1 && dig.l1==1 && inside){
+            turn_right(max_speed,max_speed,500*time);
+            motor_forward(max_speed,250*time);
+        }     
+// cut till here to change mode ---------------------------------------------
+        CyDelay(time);
+    }
+}   
+// @ sumo
+/*
+
+        
+*/
+
+// @line follower
+/*
+motor_forward(max_speed,200);
         } else 
         if (state == 0 && (flag == 3)) {
             motor_stop();
@@ -142,49 +182,7 @@ int main()
             move(speedr,speedl,time);
             last_er = error_right;
             last_el = error_left;
-        }  
-// cut till here to change mode ---------------------------------------------
-        CyDelay(time);
-    }
-}   
-// @ sumo
-/*
-motor_forward(max_speed,400);
-            inside = 1;
-        } else 
-        if (!inside) {
-            error_left = (Sensor_max - ref.l1);
-            error_right = (Sensor_max - ref.r1);
-            speedr = max_speed 
-                     - (kp* error_left)/left_max 
-                     + kd*(error_left - last_el)/left_max;
-            speedl = max_speed 
-                     - (kp* error_right)/right_max 
-                     + kd*(error_right - last_er)/right_max;
-            if (speedl > max_speed) speedl = max_speed;
-            if (speedr > max_speed) speedr = max_speed;
-            if (speedl < 0) turn_left(speedr,-speedl,time);
-            else
-            if (speedr < 0) turn_right(-speedr,speedl,time); 
-            else
-            motor_turn(speedl,speedr,time);
-            last_er = error_right;
-            last_el = error_left;
-        } else
-        if ((dig.r3 == 0 || dig.r1 == 0 || dig.l1==0 || dig.l3==0) && inside) {
-            motor_backward(200,250*time);
-            turn_right(50,255,250*time);
-        } else 
-        if (dig.r1==1 && dig.l1==1 && inside){
-            turn_right(max_speed,max_speed,500*time);
-            motor_forward(max_speed,250*time);
-        }     
-        
-*/
-
-// @line follower
-/*
-             
+        }               
 */
 
 /* Don't remove the functions below */

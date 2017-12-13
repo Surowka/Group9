@@ -59,6 +59,15 @@ void move (int speedr, int speedl, uint32 delay)
     PWM_WriteCompare2(speedr); 
     CyDelay(delay);
 }
+
+void turn_right(int speedl, int speedr, uint32 delay)
+{
+    MotorDirLeft_Write(0);     
+    MotorDirRight_Write(1);
+    PWM_WriteCompare1(speedl); 
+    PWM_WriteCompare2(speedr); 
+    CyDelay(delay);
+}
 /**
 * @brief    Moving motors to make a turn 
 * @details  moving left when l_speed < r_speed or moving right when l_speed > r_speed

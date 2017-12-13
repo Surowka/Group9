@@ -92,9 +92,9 @@ int main()
     motor_start();    
     reflectance_start();
     
-    int const Sensor_max = 23999, time = 1, left_max = Sensor_max - 4100, right_max = Sensor_max - 5200;
+    int const Sensor_max = 23999, time = 1, left_max = Sensor_max - 5000, right_max = Sensor_max - 5000;
     int speedl, speedr, error_left, error_right, max_speed = 255, last_er=0, last_el=0;
-    int const kp = max_speed + 45,kd = kp/10;
+    int const kp = max_speed + 75 ,kd = kp/5;
     int IR_val = 0;
     int flag = 0;
     int state = 0; 
@@ -122,7 +122,34 @@ int main()
             } while (!IR_val);
             motor_start();
 // cut here to change from line to sumo and vice versa --------------------------
-        motor_forward(max_speed,400);
+            motor_forward(max_speed,200);
+        } else 
+        if (state == 0 && (flag == 3)) {
+            motor_stop();
+        } else {
+            error_left = (Sensor_max - ref.l1);
+            error_right = (Sensor_max - ref.r1);
+            speedr = max_speed 
+                     - (kp* error_left)/left_max 
+                     + kd*(error_left - last_el)/left_max;
+            speedl = max_speed 
+                     - (kp* error_right)/right_max 
+                     + kd*(error_right - last_er)/right_max;
+            if (speedl > max_speed) speedl = max_speed;
+            if (speedr > max_speed) speedr = max_speed;
+            if (speedl < -max_speed) speedl = -max_speed;
+            if (speedr < -max_speed) speedr = -max_speed; 
+            move(speedr,speedl,time);
+            last_er = error_right;
+            last_el = error_left;
+        }    
+// cut till here to change mode ---------------------------------------------
+        CyDelay(time);
+    }
+}   
+// @ sumo
+/*
+motor_forward(max_speed,400);
             inside = 1;
         } else 
         if (!inside) {
@@ -150,39 +177,12 @@ int main()
             turn_right(max_speed,max_speed,500*time);
             motor_forward(max_speed,250*time);
         }     
-// cut till here to change mode ---------------------------------------------
-        CyDelay(time);
-    }
-}   
-// @ sumo
-/*
-
         
 */
 
 // @line follower
 /*
-motor_forward(max_speed,200);
-        } else 
-        if (state == 0 && (flag == 3)) {
-            motor_stop();
-        } else {
-            error_left = (Sensor_max - ref.l1);
-            error_right = (Sensor_max - ref.r1);
-            speedr = max_speed 
-                     - (kp* error_left)/left_max 
-                     + kd*(error_left - last_el)/left_max;
-            speedl = max_speed 
-                     - (kp* error_right)/right_max 
-                     + kd*(error_right - last_er)/right_max;
-            if (speedl > max_speed) speedl = max_speed;
-            if (speedr > max_speed) speedr = max_speed;
-            if (speedl < -max_speed) speedl = -max_speed;
-            if (speedr < -max_speed) speedr = -max_speed; 
-            move(speedr,speedl,time);
-            last_er = error_right;
-            last_el = error_left;
-        }               
+           
 */
 
 /* Don't remove the functions below */

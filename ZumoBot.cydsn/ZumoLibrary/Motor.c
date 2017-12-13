@@ -3,6 +3,7 @@
  * @brief   Basic methods for operating motor sensor. For more details, please refer to Motor.h file. 
  * @details included in Zumo shield
 */
+#include <stdlib.h>
 #include "Motor.h"
 
 
@@ -50,10 +51,12 @@ void move (int speedr, int speedl, uint32 delay)
     if (speedr < 0 && speedl >=0) {
         MotorDirLeft_Write(0);     
         MotorDirRight_Write(1); 
+        speedr = -speedr;
     } else
     if (speedr >=0 && speedl <0) {
         MotorDirLeft_Write(1);      
-        MotorDirRight_Write(0);    
+        MotorDirRight_Write(0); 
+        speedl = -speedl;
     }
     PWM_WriteCompare1(speedl); 
     PWM_WriteCompare2(speedr); 

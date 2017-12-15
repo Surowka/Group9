@@ -13,13 +13,6 @@
 
 int rread(void);
 
-/**
- * @file    main.c
- * @brief   
- * @details  ** You should enable global interrupt for operating properly. **<br>&nbsp;&nbsp;&nbsp;CyGlobalIntEnable;<br>
-*/
-
-
 //battery level//
 /*
 int main()
@@ -36,10 +29,8 @@ int main()
     BatteryLed_Write(0); // Switch led off 
     //uint8 button;
     //button = SW1_Read(); // read SW1 on pSoC board
-
     for(;;)
-    {
-        
+    {        
         ADC_Battery_StartConvert();
         if(ADC_Battery_IsEndConversion(ADC_Battery_WAIT_FOR_RESULT)) {   // wait for get ADC converted value
             adcresult = ADC_Battery_GetResult16();
@@ -48,35 +39,11 @@ int main()
             // If you want to print value
             printf("%d %f\r\n",adcresult, volts);
         }
-        CyDelay(500);
-        
+        CyDelay(500);       
     }
  }   
 */
 
-/*
-//ultra sonic sensor//
-int main()
-{
-    CyGlobalIntEnable; 
-    UART_1_Start();
-    motor_start();
-    Ultra_Start();                          // Ultra Sonic Start function
-    struct sensors_ dig;
-    
-    while(1) {
-        //If you want to print out the value  
-        printf("distance = %5.0f\r\n", Ultra_GetDistance());
-        reflectance_digital(&dig);
-        if (dig.l1 == 0 || dig.r1 == 0 || dig.l3==0 || dig.r3==0){
-            motor_backward(100,500);
-           motor_turn(150,15,100);
-        } else motor_forward(100,500);
-        CyDelay(1);
-        
-    }
-}   */
-//
 
 //reflectance//
 int main()
@@ -106,6 +73,7 @@ int main()
     {
         reflectance_read(&ref);
         reflectance_digital(&dig);
+        //stopping condition check
         if (dig.l3 == 0 && dig.l1 == 0 && dig.r1 == 0 && dig.r3 == 0) {
             temp = 0;  
         } else temp = 4;
@@ -124,6 +92,7 @@ int main()
 // cut here to change from line to sumo and vice versa --------------------------
             motor_forward(max_speed,200);
         } else 
+        // stopping at finish line
         if (state == 0 && (flag == 3)) {
             motor_stop();
         } else {
@@ -135,6 +104,7 @@ int main()
             speedl = max_speed 
                      - (kp* error_right)/right_max 
                      + kd*(error_right - last_er)/right_max;
+            // restriction of motor speed
             if (speedl > max_speed) speedl = max_speed;
             if (speedr > max_speed) speedr = max_speed;
             if (speedl < -max_speed) speedl = -max_speed;
@@ -161,10 +131,11 @@ motor_forward(max_speed,400);
             speedl = max_speed 
                      - (kp* error_right)/right_max 
                      + kd*(error_right - last_er)/right_max;
+            // restriction of motor speed
             if (speedl > max_speed) speedl = max_speed;
             if (speedr > max_speed) speedr = max_speed;
             if (speedl < -max_speed) speedl = -max_speed;
-            if (speedr < -max_speed) speedr = -max_speed; 
+            if (speedr < -max_speed) speedr = -max_speed;  
             move(speedr,speedl,time);
             last_er = error_right;
             last_el = error_left;
